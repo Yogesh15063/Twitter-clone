@@ -1,5 +1,5 @@
 import User from "../models/user.model.js";
-import bycrypt from "bcryptjs"
+import bcrypt from "bcryptjs"
 import { generateTokenAndCookies } from "../lib/utils/genrateToken.js";
 export const signup=async(req,res)=>{
   try {
@@ -23,8 +23,8 @@ export const signup=async(req,res)=>{
      }
 
 
-     const salt = await bycrypt.genSalt(10);
-     const hashedPassword = await bycrypt.hash(password,salt);
+     const salt = await bcrypt.genSalt(10);
+     const hashedPassword = await bcrypt.hash(password,salt);
 
      const newUser = new User({
         fullname,
@@ -58,31 +58,52 @@ export const signup=async(req,res)=>{
 }
 
 
-export const login=async(req,res)=>{
+export const login = async (req, res) => {
     try {
-        const {username,password}=req.body;
-        const user = await User.findOne({username});
-        const isPasswordCorrect = await bycrypt.compare(password, user?.password || "");
-        if(!user || !isPasswordCorrect){
-         return res.status(400).json({error:"Invalid username and password"})
+        const { username, password } = req.body;
+
+        // Check if the username is provided
+        if (!username || !password) {
+            return res.status(400).json({ error: "Username and password are required" });
         }
-        generateTokenAndCookies(user._id,res);
+
+        // Find the user by username
+        const user = await User.findOne({ username });
+        
+        // If user is not found, return an error immediately
+        if (!user) {
+            return res.status(400).json({ error: "Invalid username and password" });
+        }
+
+        // Compare the provided password with the user's stored password
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        
+        // If the password is incorrect, return an error
+        if (!isPasswordCorrect) {
+            return res.status(400).json({ error: "Invalid username and password" });
+        }
+
+        // Generate a token and set cookies if login is successful
+        generateTokenAndCookies(user._id, res);
+
+        // Respond with user information
         res.status(200).json({
-            _id:user._id,
-            fullname:user.fullname,
-            username:user.username,
-            email:user.email,
-            followers:user.followers,
-            following:user.following,
-            profileImg:user.profileImg,
-            coverImg:user.coverImg,
-        })
+            _id: user._id,
+            fullname: user.fullname,
+            username: user.username,
+            email: user.email,
+            followers: user.followers,
+            following: user.following,
+            profileImg: user.profileImg,
+            coverImg: user.coverImg,
+        });
 
     } catch (error) {
-        console.log("error in login controller", error.message)
-        res.status(500).json({error:"Internal Server Error"})
+        console.log("Error in login controller:", error.message);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-}
+};
+
 
 
 export const logout=async(req,res)=>{
