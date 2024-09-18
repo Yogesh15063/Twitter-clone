@@ -1,6 +1,6 @@
 import Post from "./Post";
 import PostSkeleton from "../skeletons/PostSkeleton";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "react-query";
 import { useEffect } from "react";
 
 const Posts = ({ feedType, username, userId }) => {
